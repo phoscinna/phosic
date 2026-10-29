@@ -1,0 +1,26 @@
+name: Run phosic daily          # Actions 页面里显示的名字
+
+on:                             # 什么时候触发
+  schedule:
+    - cron: '0 1 * * *'         # 每天 UTC 1 点（北京 9 点）
+  workflow_dispatch:            # 也允许网页上手动点按钮跑
+
+jobs:
+  run:
+    runs-on: ubuntu-latest      # 在一台云端 Ubuntu 上跑
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4        # 拉下你的仓库代码
+
+      - name: Set up Python
+        uses: actions/setup-python@v5    # 装好 Python
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install -r requirements.txt   # 若没有 requirements.txt，改成 pip install python-dotenv
+
+      - name: Run script
+        run: python phosic.py               # ← 改成你的入口脚本
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}   # ← 名字与你 Secrets 里存的对上
