@@ -20,7 +20,7 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt   # 若没有 requirements.txt，改成 pip install python-dotenv
 
-  - name: Run script
-    run: python phosic.py
-    env:
-      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      - name: Run script
+        run: python phosic.py
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
