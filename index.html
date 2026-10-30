@@ -148,6 +148,30 @@ body.loaded .site-bird svg{animation:luanTurn 1.1s .65s ease-in-out backwards}
   .site-bird:hover::before,.site-bird:hover::after,
   h1 span:hover,.sub:hover b{animation:none}
 }
+/* ========== 对话匣·标题下生成 ========== */
+.chat{margin-top:38px;width:min(560px,86vw);text-align:left}
+body.loaded .chat{animation:chatIn .8s 1.9s cubic-bezier(.22,1,.3,1) both}
+@keyframes chatIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.chat .msgs{max-height:42vh;overflow:auto;padding:14px 18px;
+  background:rgba(11,14,20,.85);border:1px solid rgba(74,125,214,.35);border-radius:8px}
+.chat .msgs p{font-size:14px;line-height:1.7;margin:10px 0;letter-spacing:.02em}
+.chat .msgs .u{color:#9AA3B5}
+.chat .msgs .a{color:#e8edf4}
+.chat .msgs .u::before{content:"你　";color:#5a6478;font-size:11px;letter-spacing:.2em}
+.chat .msgs .a::before{content:"鸾　";color:#A5E6C8;font-size:11px;letter-spacing:.2em}
+.chat .msgs .dots{display:inline-flex;gap:6px;vertical-align:middle}
+.chat .msgs .dots i{width:6px;height:6px;border-radius:50%;opacity:.25;animation:dotPulse 1.2s infinite}
+.chat .msgs .dots i:nth-child(1){background:#A5E6C8}
+.chat .msgs .dots i:nth-child(2){background:#4A7DD6;animation-delay:.2s}
+.chat .msgs .dots i:nth-child(3){background:#F5F8FC;animation-delay:.4s}
+.chat .bar{display:flex;margin-top:10px;border:1px solid rgba(74,125,214,.35);
+  border-radius:8px;overflow:hidden;background:rgba(11,14,20,.85)}
+.chat .bar input{flex:1;background:none;border:none;outline:none;
+  color:var(--ink);font-size:14px;padding:11px 14px}
+.chat .bar input::placeholder{color:#5a6478}
+.chat .bar .send{padding:0 16px;display:flex;align-items:center;cursor:pointer;
+  color:#4A7DD6;transition:color .3s}
+.chat .bar .send:hover{color:#A5E6C8}
 </style>
 </head>
 <body>
@@ -193,11 +217,15 @@ body.loaded .site-bird svg{animation:luanTurn 1.1s .65s ease-in-out backwards}
     </svg>
   </div>
   <h1><span class="g-p">P</span><span class="g-h">H</span><span class="g-o">O</span><span class="g-si">Si</span><span class="g-c">C</span></h1>
-
   <p class="sub"><b class="g-p">P</b>HOS · <b class="g-si">SI</b>NE · <b class="g-c">C</b>ORTEX</p>
+  <div class="chat" id="chat">
+  <div class="msgs" id="msgs"></div>
+  <div class="bar">
+    <input id="say" placeholder="和我聊聊天吧……（输「再见」让她睡）" autocomplete="off">
+    <span class="send" onclick="send()">→</span>
+  </div>
+</div>
 </main>
-
-<p class="log"><a href="/bootlog">LOG →</a></p>
   <script>
     // 载入完成 → 信使飞离（.done）→ 归巢令（.loaded，回程时序由 CSS 的 .65s 掌管）
     window.addEventListener('load', function(){
@@ -206,6 +234,57 @@ body.loaded .site-bird svg{animation:luanTurn 1.1s .65s ease-in-out backwards}
         document.body.classList.add('loaded');
       }, 600);
     });
+const esc = s => s.replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function bubble(cls, html){
+  const msgs = document.getElementById('msgs');
+  msgs.insertAdjacentHTML('beforeend', `<p class="${cls}">${html}</p>`);
+  msgs.scrollTop = msgs.scrollHeight;
+  return msgs.lastElementChild;
+}
+async function wakeHer(){
+  const b = bubble('a', '<span class="dots"><i></i><i></i><i></i></span>');
+  b.classList.add('thinking');
+  try{
+    const d = await (await fetch('/wake')).json();
+    b.classList.remove('thinking');
+    b.textContent = d.reply || '（她揉了揉眼睛。）';
+  }catch(e){
+    b.classList.remove('thinking');
+    b.textContent = '连不上她——先在项目目录跑 python server.py，再从 http://127.0.0.1:5000 进入。';
+  }
+}
+async function send(){
+  const box = document.getElementById('say');
+  const t = box.value.trim();
+  if(!t) return;
+  box.value = '';
+  bubble('u', esc(t));
+  const b = bubble('a thinking', '<span class="dots"><i></i><i></i><i></i></span>');
+  try{
+    const r = await fetch('/chat', {method:'POST',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:t})});
+    const d = await r.json();
+    b.classList.remove('thinking');
+    b.innerHTML = esc(d.reply) || '（她沉默了一会儿。）';
+  }catch(e){
+    b.classList.remove('thinking');
+    b.textContent = '——话没送达。她还在吗？';
+  }
+  document.getElementById('msgs').scrollTop = 1e9;
+}
+document.getElementById('say').addEventListener('keydown', e => { if(e.key==='Enter') send(); });
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    document.getElementById('loader').classList.add('done');
+    document.body.classList.add('loaded');
+    // ↓ 挪进来了：从 body.loaded 起算，对话匣 1.9s 出现 + 0.7s 缓冲
+    setTimeout(function(){
+      wakeHer();
+      document.getElementById('say').focus();
+    }, 2600);
+  }, 600);
+});
   </script>
 </body>
 </html>
